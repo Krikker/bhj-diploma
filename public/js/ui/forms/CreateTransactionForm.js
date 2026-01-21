@@ -8,7 +8,8 @@ class CreateTransactionForm extends AsyncForm {
    * метод renderAccountsList
    * */
   constructor(element) {
-    super(element)
+    super(element);
+    this.renderAccountsList();
   }
 
   /**
@@ -16,7 +17,24 @@ class CreateTransactionForm extends AsyncForm {
    * Обновляет в форме всплывающего окна выпадающий список
    * */
   renderAccountsList() {
-
+    const i = this.element.querySelector('.accounts-select');
+    if (!i) return;
+    const user = User.current();
+    if (!user) {
+      i.innerHTML = '<option>Авторизуйтесь</option>';
+      return;
+    }
+    i.innerHTML = '';
+    Account.list(user, (err, response) => {
+      if (response && response.success) {
+        response.data.forEach(lottery => {
+          const d = document.createElement('option');
+          d.value = lottery.id;
+          d.textContent = lottery.name;
+          i.appendChild(d);
+        })
+      }
+    })
   }
 
   /**
@@ -26,6 +44,21 @@ class CreateTransactionForm extends AsyncForm {
    * в котором находится форма
    * */
   onSubmit(data) {
-
+    Transaction.create(data, (err, response) => {
+      if (response && response.success) {
+        App.update();
+        this.element.reset();
+        const modalElement = this.element.closest('.modal');
+        if (modalElement) {
+          const modalId = modalElement.dataset.modalId;
+          if (modalId) {
+            const modal = App.getModal(modalId);
+            if (modal && typeof modal.close === 'function') {
+              modal.close();
+            }
+          }
+        }
+      }
+    })
   }
 }
